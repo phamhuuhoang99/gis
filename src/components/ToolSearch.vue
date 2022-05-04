@@ -241,6 +241,24 @@
         </Transition>
       </li>
       <li>
+        <v-tooltip top>
+          <template v-slot:activator="{ on, attrs }">
+            <div
+              class="wrapper__img"
+              v-bind="attrs"
+              v-on="on"
+              @click="openAttribute"
+            >
+              <img
+                src="https://gis.gso.gov.vn/_nuxt/img/icon_note.2c4541e.png"
+                alt=""
+              />
+            </div>
+          </template>
+          <span>Open Attributes</span>
+        </v-tooltip>
+      </li>
+      <li>
         <div class="wrapper__img" @click="showOptionsHandle(6)">
           <img
             src="https://gis.gso.gov.vn/_nuxt/img/ic_search.c55b9b2.png"
@@ -292,10 +310,35 @@
         </div>
       </li>
     </ul>
+
+    <!-- Model show Attributes -->
+    <v-dialog v-model="isShowAttribute" width="50vw">
+      <v-card>
+        <v-card-title style="color: white; background: #1e799d" class="text-h5">
+          Bảng Thuộc Tính
+        </v-card-title>
+
+        <v-data-table
+          :headers="headers"
+          :items="points"
+          :items-per-page="5"
+          class="elevation-1"
+        ></v-data-table>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="isShowAttribute = false">
+            OK
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script>
+import PointApi from "../api/PointApi";
+
 export default {
   data() {
     return {
@@ -323,14 +366,28 @@ export default {
         option5: false,
         option6: false,
       },
+      headers: [
+        {
+          text: "gid",
+          align: "start",
+          sortable: false,
+          value: "gid",
+        },
+        { text: "osm_id", value: "osm_id" },
+        { text: "code", value: "code" },
+        { text: "fclass", value: "fclass" },
+        { text: "name", value: "name" },
+      ],
+      points: [],
       mapSelected: null,
       heatMap: null,
       pointMap: null,
+      isShowAttribute: false,
     };
   },
   methods: {
     disableAllOptions(index) {
-      Object.keys(this.showOptions).forEach((key) => {
+      Object.keys(this.showOptions).forEach(key => {
         if (key !== `option${index}`) this.showOptions[key] = false;
       });
     },
@@ -360,6 +417,11 @@ export default {
     },
     freshHeatMap() {
       this.heatMap = null;
+    },
+    async openAttribute() {
+      this.disableAllOptions();
+      this.isShowAttribute = true;
+      this.points = await PointApi.getAll();
     },
   },
 };
