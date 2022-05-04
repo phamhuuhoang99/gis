@@ -6,14 +6,9 @@
 </template>
 
 <script>
-import "ol/ol.css";
-import Map from "ol/Map";
-import OSM from "ol/source/OSM";
-import TileLayer from "ol/layer/Tile";
-import View from "ol/View";
-
 import ToolSearch from "../components/ToolSearch.vue";
 import AppNav from "../components/AppNav.vue";
+import { mapActions } from "vuex";
 
 export default {
   name: "HomePage",
@@ -25,23 +20,16 @@ export default {
     return {};
   },
   mounted() {
-    new Map({
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-        }),
-      ],
-      target: "map",
-      view: new View({
-        zoom: 6,
-        center: [11781474.417420888, 1815619.3084370033],
-      }),
-    });
+    this.initMap();
+  },
+  methods: {
+    ...mapActions(["initMap"]),
   },
 };
 </script>
 
 <style scoped>
+@import "ol/ol.css";
 #map {
   position: relative;
   height: calc(100vh - 129px);

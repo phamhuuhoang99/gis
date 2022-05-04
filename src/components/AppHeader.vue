@@ -10,19 +10,33 @@
             <a class="active"> Trang chủ</a>
           </li>
           <li class="nav-item">
-            <a> giới thiệu</a>
+            <a>Giới thiệu</a>
           </li>
           <li class="nav-item"><a> Khái niệm</a></li>
           <li class="nav-item"><a>Ấn phẩm</a></li>
-          <li class="nav-item"><a> Dữ liệu</a></li>
-          <li class="nav-item"><a> Hướng dẫn</a></li>
+          <li class="nav-item"><a>Dữ liệu</a></li>
+          <li class="nav-item"><a>Hướng dẫn</a></li>
         </ul>
       </div>
       <div class="header__menu_right">
         <div class="search">
-          <div class="wrapper__input_container">
-            <input type="text" class="search__input" placeholder="Tìm kiếm" />
-          </div>
+          <!-- <div class="wrapper__input_container"> -->
+          <!-- <input type="text" class="search__input" placeholder="Tìm kiếm" /> -->
+          <v-autocomplete
+            v-model="search"
+            :items="items"
+            item-text="ten_tinh"
+            class="rounded-0"
+            dense
+            outlined
+            hide-details
+            hide-no-data
+            append-icon=""
+            clearable
+            @change="handleChange"
+            return-object
+          />
+          <!-- </div> -->
           <div class="icon">
             <v-icon color="white">mdi-magnify</v-icon>
           </div>
@@ -52,10 +66,94 @@
 </template>
 
 <script>
-export default {};
+import ProvinceApi from "../api/ProvinceApi";
+import GeoJSON from "ol/format/GeoJSON";
+import { Fill, Stroke, Style, Circle } from "ol/style";
+import { Vector as VectorSource } from "ol/source";
+import { Vector as VectorLayer } from "ol/layer";
+import { mapGetters } from "vuex";
+
+export default {
+  name: "AppHeader",
+  async created() {
+    try {
+      const response = await ProvinceApi.getAll();
+      this.items = response;
+    } catch (error) {
+      console.log("Failed: ", error);
+    }
+  },
+  data() {
+    return {
+      items: [],
+      search: null,
+    };
+  },
+  mounted() {},
+  computed: {
+    ...mapGetters(["map"]),
+  },
+  methods: {
+    async handleChange(item) {
+      if (item) {
+        const layerOverLayer = this.map.getAllLayers()[3];
+        if (layerOverLayer) this.map.removeLayer(layerOverLayer);
+
+        const source = new VectorSource();
+
+        const format = new GeoJSON();
+        let style = new Style({
+          fill: new Fill({
+            color: "rgba(255,255,255,0.4)",
+          }),
+          stroke: new Stroke({
+            color: "#53ffb3",
+            width: 2,
+          }),
+          image: new Circle({
+            radius: 4,
+            fill: new Fill({
+              color: "#53ffb3",
+            }),
+          }),
+        });
+
+        const res = await ProvinceApi.getPointInProvince(item);
+
+        for (let i = 0; i < res.length; i++) {
+          const featuresPoint = format.readFeature(res[i].geojson);
+          featuresPoint.setStyle(style);
+          featuresPoint.getGeometry().transform("EPSG:4326", "EPSG:3857");
+          source.addFeature(featuresPoint);
+        }
+
+        const features = format.readFeatures(item.geojson);
+
+        const polygon = features[0];
+
+        const geom = polygon.getGeometry().transform("EPSG:4326", "EPSG:3857");
+
+        const extend = geom.getExtent();
+
+        source.addFeature(polygon);
+
+        const vectorLayer = new VectorLayer({
+          source: source,
+        });
+
+        this.map.addLayer(vectorLayer);
+        this.map.getView().fit(extend, this.map.getSize());
+      }
+    },
+  },
+};
 </script>
 
 <style lang="css" scoped>
+.v-text-field--outlined >>> fieldset {
+  border: 2px solid #127bbf;
+  color: #127bbf !important;
+}
 .header {
   display: flex;
   flex-direction: column;
@@ -150,8 +248,8 @@ input {
   width: 100%;
 }
 .icon {
-  height: 36px;
-  width: 36px;
+  height: 40px;
+  width: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,6 +275,7 @@ input {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 .lang {
