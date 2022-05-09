@@ -163,7 +163,7 @@
           <se:MaxScaleDenominator>18000000</se:MaxScaleDenominator>
           <se:TextSymbolizer>
             <se:Label>
-              <ogc:PropertyName>name_1</ogc:PropertyName>
+              <ogc:PropertyName>ten_tinh</ogc:PropertyName>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">San Francisco Text Med Ita</se:SvgParameter>
@@ -195,7 +195,7 @@
           <se:MaxScaleDenominator>10000000</se:MaxScaleDenominator>
           <se:TextSymbolizer>
             <se:Label>
-              <ogc:PropertyName>name_1</ogc:PropertyName>
+              <ogc:PropertyName>ten_tinh</ogc:PropertyName>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">San Francisco Text Med Ita</se:SvgParameter>
@@ -227,7 +227,7 @@
           <se:MaxScaleDenominator>5000000</se:MaxScaleDenominator>
           <se:TextSymbolizer>
             <se:Label>
-              <ogc:PropertyName>name_1</ogc:PropertyName>
+              <ogc:PropertyName>ten_tinh</ogc:PropertyName>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">San Francisco Text Med Ita</se:SvgParameter>
@@ -259,7 +259,7 @@
           <se:MaxScaleDenominator>2000000</se:MaxScaleDenominator>
           <se:TextSymbolizer>
             <se:Label>
-              <ogc:PropertyName>name_1</ogc:PropertyName>
+              <ogc:PropertyName>ten_tinh</ogc:PropertyName>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">San Francisco Text Med Ita</se:SvgParameter>
@@ -291,7 +291,7 @@
           <se:MaxScaleDenominator>1000000</se:MaxScaleDenominator>
           <se:TextSymbolizer>
             <se:Label>
-              <ogc:PropertyName>name_1</ogc:PropertyName>
+              <ogc:PropertyName>ten_tinh</ogc:PropertyName>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">San Francisco Text Med Ita</se:SvgParameter>
@@ -323,7 +323,7 @@
           <se:MaxScaleDenominator>450000</se:MaxScaleDenominator>
           <se:TextSymbolizer>
             <se:Label>
-              <ogc:PropertyName>name_1</ogc:PropertyName>
+              <ogc:PropertyName>ten_tinh</ogc:PropertyName>
             </se:Label>
             <se:Font>
               <se:SvgParameter name="font-family">San Francisco Text Med Ita</se:SvgParameter>

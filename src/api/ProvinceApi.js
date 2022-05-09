@@ -9,5 +9,9 @@ const provinceApi = {
     const url = "/provinces/" + gid + "/poi-in-pol";
     return axiosClient.get(url, {});
   },
+  getPontInDistrict: ({ objectid }) => {
+    const url = "/district/" + objectid + "/poi-in-pol";
+    return axiosClient.get(url, {});
+  },
 };
 export default provinceApi;

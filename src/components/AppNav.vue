@@ -25,7 +25,10 @@
         </div>
         <div class="widget-content">
           <div class="title">
-            <p><strong>Dân số trung bình </strong>(Đơn vị: Người)</p>
+            <p>
+              <strong>Thống kê số lượng người khuyết tật </strong>(Đơn vị:
+              Người)
+            </p>
             <div class="img__wrapper">
               <img
                 src="https://gis.gso.gov.vn/_nuxt/img/icon_note.2c4541e.png"
@@ -37,7 +40,10 @@
         </div>
         <div class="widget-content">
           <div class="title">
-            <p><strong>Chỉ số già hóa </strong>(Đơn vị: %)</p>
+            <p>
+              <strong>Thống kê số lượng người có nhu cầu hỗ trợ </strong>(Đơn
+              vị: Người)
+            </p>
             <div class="img__wrapper">
               <img
                 src="https://gis.gso.gov.vn/_nuxt/img/icon_note.2c4541e.png"
@@ -49,7 +55,10 @@
         </div>
         <div class="widget-content">
           <div class="title">
-            <p><strong>Tốc độ tăng trưởng (GDP) </strong>(Đơn vị: %)</p>
+            <p>
+              <strong>Thống kê số lượng đã phục hồi chức năng </strong>(Đơn vị:
+              Người)
+            </p>
             <div class="img__wrapper">
               <img
                 src="https://gis.gso.gov.vn/_nuxt/img/icon_note.2c4541e.png"

@@ -1,8 +1,6 @@
 <template>
   <div class="header">
-    <h2 class="header__title">
-      HỆ THỐNG DỮ LIỆU KHÔNG GIAN DÂN SỐ VÀ PHÁT TRIỂN
-    </h2>
+    <h2 class="header__title">HỆ THỐNG QUẢN LÝ THÔNG TIN NGƯỜI KHUYẾT TẬT</h2>
     <div class="header__menu">
       <div class="header__menu_left">
         <ul class="nav">
@@ -12,8 +10,6 @@
           <li class="nav-item">
             <a>Giới thiệu</a>
           </li>
-          <li class="nav-item"><a> Khái niệm</a></li>
-          <li class="nav-item"><a>Ấn phẩm</a></li>
           <li class="nav-item"><a>Dữ liệu</a></li>
           <li class="nav-item"><a>Hướng dẫn</a></li>
         </ul>
@@ -68,7 +64,7 @@
 <script>
 import ProvinceApi from "../api/ProvinceApi";
 import GeoJSON from "ol/format/GeoJSON";
-import { Fill, Stroke, Style, Circle } from "ol/style";
+import { Fill, Style, Circle } from "ol/style";
 import { Vector as VectorSource } from "ol/source";
 import { Vector as VectorLayer } from "ol/layer";
 import { mapGetters } from "vuex";
@@ -103,17 +99,10 @@ export default {
 
         const format = new GeoJSON();
         let style = new Style({
-          fill: new Fill({
-            color: "rgba(255,255,255,0.4)",
-          }),
-          stroke: new Stroke({
-            color: "#53ffb3",
-            width: 2,
-          }),
           image: new Circle({
             radius: 4,
             fill: new Fill({
-              color: "#53ffb3",
+              color: "rgba(255,0,0,0.8)",
             }),
           }),
         });
