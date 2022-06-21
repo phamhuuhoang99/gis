@@ -47,7 +47,7 @@ const mapModule = {
       const map = new Map({
         target: "map",
         view: new View({
-          zoom: 10,
+          zoom: 9,
           center: [11781474.417420888, 2415619.3084370033],
           constrainResolution: true,
         }),

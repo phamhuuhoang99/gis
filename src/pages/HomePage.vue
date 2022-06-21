@@ -20,13 +20,13 @@ import { Cluster, Vector as VectorSource } from "ol/source";
 import { LineString, Point, Polygon } from "ol/geom";
 import { Vector as VectorLayer } from "ol/layer";
 import { createEmpty, getWidth, extend } from "ol/extent";
-// import { bbox as bboxStrategy } from "ol/loadingstrategy";
 import monotoneChainConvexHull from "monotone-chain-convex-hull";
 import GeoJSON from "ol/format/GeoJSON";
 import { Fill, Stroke, Style, Text } from "ol/style";
-// import Select from "ol/interaction/Select";
-// import { click } from "ol/events/condition";
 import DistrictApi from "../api/DistrictApi";
+import TileLayer from "ol/layer/Tile";
+import TileWMS from "ol/source/TileWMS";
+import home from "../assets/home.png";
 
 export default {
   name: "HomePage",
@@ -35,21 +35,33 @@ export default {
     AppNav,
   },
   data() {
-    return {};
+    return {
+      loadingData: false,
+    };
   },
   mounted() {
     this.initMap();
 
-    const getText = function (feature, resolution) {
+    const LEVEL_MAP_SWITCH_TINH_TO_HUYEN = 10;
+
+    this.map.on("loadstart", () => {
+      this.map.getTargetElement().classList.add("spinner");
+    });
+    this.map.on("loadend", () => {
+      !this.loadingData &&
+        this.map.getTargetElement().classList.remove("spinner");
+    });
+
+    const getText = function (feature, resolution, text) {
       const type = "wrap";
       const maxResolution = "4800";
-      let text = "";
-      if (feature.get("ten_huyen")) {
-        text = `Huyện ${feature.get("ten_huyen")}`;
-      } else if (feature.get("ten_tinh")) {
-        text = `Tỉnh ${feature.get("ten_tinh")}`;
+      if (text === null) {
+        if (feature.get("ten_huyen")) {
+          text = `Huyện ${feature.get("ten_huyen")}`;
+        } else if (feature.get("ten_tinh")) {
+          text = `Tỉnh ${feature.get("ten_tinh")}`;
+        }
       }
-      text += `: ${feature.get("persons")} người`;
 
       if (resolution > maxResolution) {
         text = "";
@@ -60,13 +72,20 @@ export default {
       return text;
     };
 
-    const createTextStyle = function (feature, resolution) {
+    const createTextStyle = function (
+      feature,
+      resolution,
+      sizeText,
+      Y,
+      fill,
+      type,
+    ) {
       const align = "center";
       const baseline = "middle";
-      const size = "10px";
+      const size = sizeText;
       const height = "1";
       const offsetX = 0;
-      const offsetY = 0;
+      const offsetY = Y;
       const weight = "bold";
       const placement = "point";
       const maxAngle = 0.7853981633974483;
@@ -74,7 +93,7 @@ export default {
       const rotation = 0;
 
       const font = weight + " " + size + "/" + height + " " + "Arial";
-      const fillColor = "blue";
+      const fillColor = fill;
       const outlineColor = "white";
       const outlineWidth = 3;
 
@@ -82,7 +101,10 @@ export default {
         textAlign: align == "" ? undefined : align,
         textBaseline: baseline,
         font: font,
-        text: getText(feature, resolution),
+        text:
+          type === "point"
+            ? getText(feature, resolution, feature.get("persons").toString())
+            : getText(feature, resolution, null),
         fill: new Fill({ color: fillColor }),
         stroke: new Stroke({ color: outlineColor, width: outlineWidth }),
         offsetX: offsetX,
@@ -95,39 +117,89 @@ export default {
     };
 
     // Polygons
-    function polygonStyleFunction(feature, resolution) {
+    // function polygonStyleFunction(feature, resolution) {
+    //   return new Style({
+    //     stroke: new Stroke({
+    //       color: "blue",
+    //       width: 1,
+    //     }),
+    //     fill: new Fill({
+    //       color: "rgba(0, 0, 255, 0.1)",
+    //     }),
+    //     text: createTextStyle(
+    //       feature,
+    //       resolution,
+    //       "10px",
+    //       "20",
+    //       "blue",
+    //       "polygon",
+    //     ),
+    //     image: new CircleStyle({
+    //       radius: 20,
+    //       fill: null,
+    //       stroke: new Stroke({ color: "red", width: 1 }),
+    //     }),
+    //   });
+    // }
+    //points
+    const pointStyleFunction = (feature, resolution) => {
       return new Style({
-        stroke: new Stroke({
-          color: "blue",
-          width: 1,
+        image: new CircleStyle({
+          radius: 25,
+
+          fill: new Fill({
+            color: "rgba(255,0,0,0.2)",
+          }),
+          stroke: new Stroke({ color: "red", width: 1 }),
         }),
-        fill: new Fill({
-          color: "rgba(0, 0, 255, 0.1)",
-        }),
-        text: createTextStyle(feature, resolution),
+        text: createTextStyle(feature, resolution, "12px", "0", "red", "point"),
       });
-    }
+    };
 
-    const vectorTinh = new VectorLayer({
+    // const vectorTinh = new VectorLayer({
+    //   source: new VectorSource({
+    //     url: "http://localhost:8090/geoserver/hoang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hoang%3Adia_phan_tinh&outputFormat=application%2Fjson",
+    //     format: new GeoJSON(),
+    //   }),
+    //   style: polygonStyleFunction,
+    //   maxZoom: LEVEL_MAP_SWITCH_TINH_TO_HUYEN,
+    // });
+
+    // const vectorHuyen = new VectorLayer({
+    //   source: new VectorSource({
+    //     url: "http://localhost:8090/geoserver/hoang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hoang%3Adia_phan_huyen&outputFormat=application%2Fjson",
+    //     format: new GeoJSON(),
+    //   }),
+    //   minZoom: LEVEL_MAP_SWITCH_TINH_TO_HUYEN,
+    //   style: polygonStyleFunction,
+    // });
+    const hc = new TileLayer({
+      source: new TileWMS({
+        url: "http://localhost:8090/geoserver/hoang/wms",
+        params: { LAYERS: "hoang:HC", tiled: true },
+      }),
+    });
+    const centroidHuyen = new VectorLayer({
       source: new VectorSource({
-        url: "http://localhost:8090/geoserver/hoang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hoang%3Adia_phan_tinh&outputFormat=application%2Fjson",
+        url: "http://localhost:8090/geoserver/hoang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hoang%3Acentroid_huyen&outputFormat=application%2Fjson",
         format: new GeoJSON(),
       }),
-      style: polygonStyleFunction,
-      maxZoom: 9,
+      minZoom: LEVEL_MAP_SWITCH_TINH_TO_HUYEN,
+      style: pointStyleFunction,
     });
-
-    const vectorHuyen = new VectorLayer({
+    const centroidTinh = new VectorLayer({
       source: new VectorSource({
-        url: "http://localhost:8090/geoserver/hoang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hoang%3Adia_phan_huyen&outputFormat=application%2Fjson",
+        url: "http://localhost:8090/geoserver/hoang/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=hoang%3Acentroid_tinh&outputFormat=application%2Fjson",
         format: new GeoJSON(),
       }),
-      minZoom: 9,
-      style: polygonStyleFunction,
+      style: pointStyleFunction,
+      maxZoom: LEVEL_MAP_SWITCH_TINH_TO_HUYEN,
     });
 
-    this.map.addLayer(vectorHuyen);
-    this.map.addLayer(vectorTinh);
+    // this.map.addLayer(vectorTinh);
+    this.map.addLayer(hc);
+    this.map.addLayer(centroidHuyen);
+    this.map.addLayer(centroidTinh);
 
     // https://stackoverflow.com/questions/14484787/wrap-text-in-javascript
     function stringDivider(str, width, spaceReplacer) {
@@ -151,48 +223,6 @@ export default {
       }
       return str;
     }
-    // let select = null; // ref to curren
-    // const selected = new Style({
-    //   // fill: new Fill({
-    //   //   color: "#eeeeee",
-    //   // }),
-    //   stroke: new Stroke({
-    //     color: "rgba(200,20,20,0.8)",
-    //     width: 2,
-    //   }),
-    // });
-    // // function selectStyle(feature) {
-    // // const color = feature.get("COLOR") || "#eeeeee";
-    // // selected.getFill().setColor(color);
-    // // return selected;
-    // //}
-    // const selectClick = new Select({
-    //   style: selected,
-    //   layers: [vectorHuyen],
-    //   condition: click,
-    // });
-
-    // select = selectClick;
-    // if (select !== null) {
-    //   this.map.addInteraction(select);
-    // }
-    // let preselect = null;
-    // select.on("select", async e => {
-    //   const objectid = e.selected[0].get("objectid");
-    //   console.log("click");
-    //   if (objectid === preselect) return;
-    //   preselect = objectid;
-
-    //   const res = await DistrictApi.getPontInDistrict({ objectid });
-
-    //   const vectorSource = new VectorSource();
-    //   const format = new GeoJSON();
-    //   for (let i = 0; i < res.length; i++) {
-    //     const featuresPoint = format.readFeature(res[i].geojson);
-    //     // featuresPoint.setStyle(style);
-    //     featuresPoint.getGeometry().transform("EPSG:4326", "EPSG:3857");
-    //     vectorSource.addFeature(featuresPoint);
-    //   }
 
     const circleDistanceMultiplier = 1;
     const circleFootSeparation = 28;
@@ -230,7 +260,7 @@ export default {
       src: "https://openlayers.org/en/latest/examples/data/icons/emoticon-cool.svg",
     });
     const lightIcon = new Icon({
-      src: "https://covidmaps.hanoi.gov.vn/upload/1002902/20210608/cach_ly_56b64e9436.png",
+      src: home,
     });
 
     //   // /**
@@ -301,7 +331,7 @@ export default {
       const res = [];
       let angle;
 
-      legLength = Math.max(legLength, 35) * resolution; // Minimum distance to get outside the cluster icon.
+      legLength = Math.max(legLength, 10000) * resolution; // Minimum distance to get outside the cluster icon.
 
       for (let i = 0; i < count; ++i) {
         // Clockwise, like spiral.
@@ -358,51 +388,28 @@ export default {
       }
     }
 
-    //   // const vectorSource = new VectorSource({
-    //   //   format: new GeoJSON(),
-    //   //   // url: function () {
-    //   //   //   return "http://localhost:8090/geoserver/hoang/wfs?service=WFS&version=1.1.0&request=GetFeature&typename=hoang:test&maxFeatures=1000000&outputFormat=application/json";
-    //   //   // },
-    //   // });
-
-    //   this.map.on("click", event => {
-    // clusters.getFeatures(event.pixel).then(features => {
-    //   if (features.length > 0) {
-    //     const clusterMembers = features[0].get("features");
-    //     if (clusterMembers.length > 1) {
-    //       // Calculate the extent of the cluster members.
-    //       const extent = createEmpty();
-    //       clusterMembers.forEach(feature =>
-    //         extend(extent, feature.getGeometry().getExtent()),
-    //       );
-    //       const view = this.map.getView();
-    //       const resolution = this.map.getView().getResolution();
-    //       if (
-    //         view.getZoom() === view.getMaxZoom() ||
-    //         (getWidth(extent) < resolution && getWidth(extent) < resolution)
-    //       ) {
-    //         // Show an expanded view of the cluster members.
-    //         clickFeature = features[0];
-    //         clickResolution = resolution;
-    //         clusterCircles.setStyle(clusterCircleStyle);
-    //       } else {
-    //         // Zoom to the extent of the cluster members.
-    //         view.fit(extent, { duration: 500, padding: [50, 50, 50, 50] });
-    //       }
-    //     }
-    //   }
-    // });
-    // });
-    // });
+    let preFeatureHuyen = null;
+    let preFeatureTinh = null;
+    let clusterHulls,
+      clusters,
+      clusterCircles = null;
     this.map.on("click", event => {
       try {
-        if (this.map.getView().getZoom() >= 10) {
-          vectorHuyen.getFeatures(event.pixel).then(async features => {
+        if (this.map.getView().getZoom() > LEVEL_MAP_SWITCH_TINH_TO_HUYEN) {
+          centroidHuyen.getFeatures(event.pixel).then(async features => {
             if (features.length > 0) {
-              const _extend = features[0].get("geometry");
-              // console.log(extend);
+              if (preFeatureHuyen === features[0]) return;
+              preFeatureHuyen = features[0];
+              const center = features[0].get("geometry").flatCoordinates;
 
-              this.map.getView().fit(_extend, this.map.getSize());
+              this.map.getView().animate({
+                center: center,
+                duration: 1000,
+                zoom: LEVEL_MAP_SWITCH_TINH_TO_HUYEN + 2,
+              });
+
+              this.map.getTargetElement().classList.add("spinner");
+              this.loadingData = true;
 
               const objectid = features[0].get("objectid");
               const res = await DistrictApi.getPontInDistrict({ objectid });
@@ -411,31 +418,32 @@ export default {
               const format = new GeoJSON();
               for (let i = 0; i < res.length; i++) {
                 const featuresPoint = format.readFeature(res[i].geojson);
-                // featuresPoint.setStyle(style);
                 featuresPoint.getGeometry().transform("EPSG:4326", "EPSG:3857");
                 vectorSource.addFeature(featuresPoint);
               }
               const clusterSource = new Cluster({
-                attributions:
-                  'Data: <a href="https://www.data.gv.at/auftritte/?organisation=stadt-wien">Stadt Wien</a>',
                 distance: 35,
                 source: vectorSource,
               });
 
-              //   // // Layer displaying the convex hull of the hovered cluster.
-              const clusterHulls = new VectorLayer({
+              if (clusterHulls) this.map.removeLayer(clusterHulls);
+              if (clusters) this.map.removeLayer(clusters);
+              if (clusterCircles) this.map.removeLayer(clusterCircles);
+
+              // Layer displaying the convex hull of the hovered cluster.
+              clusterHulls = new VectorLayer({
                 source: clusterSource,
                 style: clusterHullStyle,
               });
 
-              //   // // Layer displaying the clusters and individual features.
-              const clusters = new VectorLayer({
+              // Layer displaying the clusters and individual features.
+              clusters = new VectorLayer({
                 source: clusterSource,
                 style: clusterStyle,
               });
 
-              //   // // Layer displaying the expanded view of overlapping cluster members.
-              const clusterCircles = new VectorLayer({
+              // Layer displaying the expanded view of overlapping cluster members.
+              clusterCircles = new VectorLayer({
                 source: clusterSource,
                 style: clusterCircleStyle,
               });
@@ -443,6 +451,9 @@ export default {
               this.map.addLayer(clusterHulls);
               this.map.addLayer(clusters);
               this.map.addLayer(clusterCircles);
+
+              this.map.getTargetElement().classList.remove("spinner");
+              this.loadingData = false;
 
               this.map.on("click", event => {
                 clusters.getFeatures(event.pixel).then(features => {
@@ -468,7 +479,7 @@ export default {
                       } else {
                         // Zoom to the extent of the cluster members.
                         view.fit(extent, {
-                          duration: 500,
+                          duration: 1000,
                           padding: [50, 50, 50, 50],
                         });
                       }
@@ -492,6 +503,19 @@ export default {
               });
             }
           });
+        } else {
+          centroidTinh.getFeatures(event.pixel).then(features => {
+            if (features.length > 0) {
+              const center = features[0].get("geometry").flatCoordinates;
+              if (preFeatureTinh === features[0]) return;
+
+              this.map.getView().animate({
+                center: center,
+                duration: 1000,
+                zoom: LEVEL_MAP_SWITCH_TINH_TO_HUYEN + 1,
+              });
+            }
+          });
         }
       } catch (err) {
         console.log(err);
@@ -501,14 +525,18 @@ export default {
     let hoverFeature = null;
 
     this.map.on("pointermove", event => {
-      vectorHuyen.getFeatures(event.pixel).then(features => {
-        if (features[0] !== hoverFeature) {
-          // Display the convex hull on hover.
-          hoverFeature = features[0];
+      this.map.getView().getZoom() <= LEVEL_MAP_SWITCH_TINH_TO_HUYEN &&
+        centroidTinh.getFeatures(event.pixel).then(features => {
           this.map.getTargetElement().style.cursor =
-            hoverFeature && this.map.getView().getZoom() >= 10 ? "pointer" : "";
-        }
-      });
+            features.length > 0 ? "pointer" : "";
+        });
+    });
+    this.map.on("pointermove", event => {
+      this.map.getView().getZoom() > LEVEL_MAP_SWITCH_TINH_TO_HUYEN &&
+        centroidHuyen.getFeatures(event.pixel).then(features => {
+          this.map.getTargetElement().style.cursor =
+            features.length > 0 ? "pointer" : "";
+        });
     });
   },
 
@@ -570,5 +598,26 @@ export default {
 }
 .ol-popup-closer:after {
   content: "✖";
+}
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner:after {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin-top: -20px;
+  margin-left: -20px;
+  border-radius: 50%;
+  border: 5px solid rgba(180, 180, 180, 0.6);
+  border-top-color: rgba(0, 0, 0, 0.6);
+  animation: spinner 0.6s linear infinite;
 }
 </style>
